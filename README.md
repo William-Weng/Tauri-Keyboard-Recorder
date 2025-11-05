@@ -16,4 +16,4 @@ npm run tauri build
 
 ## 範例
 
-https://github.com/user-attachments/assets/09640d42-1e9a-4992-91c1-639a00091482
+https://github.com/user-attachments/assets/e82758ee-68f8-4155-9bd0-760c04f2bf56
