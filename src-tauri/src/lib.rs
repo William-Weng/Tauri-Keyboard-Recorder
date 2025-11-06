@@ -2,7 +2,6 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::result::Result;
 use std::thread::{spawn, sleep, JoinHandle};
-use std::time::Duration;
 use lazy_static::lazy_static;
 use rdev::{listen, simulate, Event, EventType, Key, ListenError};
 use rdev::EventType::{KeyPress, KeyRelease, MouseMove};
@@ -209,7 +208,6 @@ fn playback() -> bool {
 
     let mut is_stop = false;
 
-    sleep(Duration::from_millis(250));
     STOP_PLAYBACK.store(false, Ordering::SeqCst);
 
     let mut last_event_time = events[0].time;

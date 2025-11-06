@@ -3,10 +3,29 @@ import { invoke } from "@tauri-apps/api/core";
 import { ref, onMounted } from "vue";
 
 const isRecording = ref(false);
+const isCountingDown = ref(false);
+const countdown = ref(5);
+let countdownInterval: number | undefined = undefined;
 
 onMounted(async () => {
   isRecording.value = await invoke("keyboard_status");
 });
+
+function playRecord() {
+  if (isRecording.value || isCountingDown.value) return;
+
+  isCountingDown.value = true;
+  countdown.value = 5;
+
+  countdownInterval = setInterval(() => {
+    countdown.value -= 1;
+    if (countdown.value <= 0) {
+      clearInterval(countdownInterval);
+      isCountingDown.value = false;
+      invoke("play_record");
+    }
+  }, 1000);
+}
 
 async function toggleRecording() {
   if (isRecording.value) { isRecording.value = await invoke("stop_record"); return; }
@@ -20,8 +39,8 @@ async function toggleRecording() {
       <button class="round-button" :class="{ 'is-recording': isRecording }" @click="toggleRecording">
         {{ isRecording ? "Stop" : "Start" }}
       </button>
-      <button class="round-button" @click="invoke('playback')" :disabled="isRecording">
-        Play
+      <button class="round-button" @click="playRecord" :disabled="isRecording || isCountingDown" :class="{ 'is-countdown': isCountingDown }">
+        {{ isCountingDown ? countdown : "Play" }}
       </button>
     </div>
   </main>
@@ -75,9 +94,9 @@ button {
 }
 
 .round-button {
+  width: 5em; /* Enforce fixed size */
+  height: 5em; /* Enforce fixed size */
   border-radius: 50%;
-  padding: 1.5em;
-  aspect-ratio: 1 / 1;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -96,13 +115,15 @@ button {
 }
 
 .round-button:active,
-.round-button.is-recording {
+.round-button.is-recording,
+.round-button.is-countdown {
   background-color: #f44336; /* Red */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transform: translateY(0);
 }
 
-.round-button.is-recording:hover {
+.round-button.is-recording:hover,
+.round-button.is-countdown:hover {
   background-color: #ef5350; /* Lighter Red */
 }
 
@@ -121,12 +142,15 @@ button {
     background-color: #2e7d32; /* Darker Green */
   }
 
+
+
   .round-button:hover {
     background-color: #4caf50; /* Green */
   }
 
   .round-button:active,
-  .round-button.is-recording {
+  .round-button.is-recording,
+  .round-button.is-countdown {
     background-color: #c62828; /* Darker Red */
   }
 }
