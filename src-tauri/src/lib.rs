@@ -8,6 +8,7 @@ use rdev::{listen, simulate, Event, EventType, Key, ListenError};
 use rdev::EventType::{KeyPress, KeyRelease, MouseMove};
 use global_hotkey::{GlobalHotKeyManager, GlobalHotKeyEvent, HotKeyState};
 use global_hotkey::hotkey::{HotKey, Code, Modifiers};
+
 struct Recorder {
     events: Vec<Event>,
 }
@@ -51,29 +52,31 @@ fn _mouse_move_action(_event: &Event, _x: f64, _y: f64) {}
 /// 模擬鍵盤按下事件
 /// # 參數
 /// - `key` - Key
-/// - `delay_time` - u64 延遲時間（毫秒）
-fn _play_key_press(key: Key, delay_time: u64) {
-
-    sleep(Duration::from_millis(delay_time));
+fn _play_key_press(key: Key) {
     
     match simulate(&EventType::KeyPress(key)) {
         Ok(_) => println!("成功模擬按鍵: {:?}", key),
-        Err(e) => println!("模擬鍵盤事件失敗: {:?}", e),
+        Err(error) => println!("模擬鍵盤事件失敗: {:?}", error),
     }
 }
 
 /// 模擬鍵盤放開事件
 /// # 參數
 /// - `key` - Key
-/// - `delay_time` - u64 延遲時間（毫秒）
-fn _play_key_release(_key: Key, _delay_time: u64) {}
+fn _play_key_release(key: Key) {
+    
+    match simulate(&EventType::KeyRelease(key)) {
+        Ok(_) => println!("成功模擬放開按鍵: {:?}", key),
+        Err(error) => println!("模擬鍵盤事件失敗: {:?}", error),
+    }
+}
 
 /// 模擬滑鼠移動事件
 /// # 參數
 /// - `x` - f64
 /// - `y` - f64
 /// - `delay_time` - u64 延遲時間（毫秒）
-fn _play_mouse_move(_x: f64, _y: f64, _delay_time: u64) {}
+fn _play_mouse_move(_x: f64, _y: f64) {}
 
 /// 回調事件處理 (鍵盤 / 滑鼠)
 /// # 參數
@@ -202,21 +205,32 @@ fn check_keyboard_status() -> bool {
 fn playback() -> bool {
     
     let events = RECORDER.lock().unwrap().events.clone();
+    if events.is_empty() { return false; }
+
     let mut is_stop = false;
 
-    sleep(Duration::from_millis(500));
+    sleep(Duration::from_millis(250));
     STOP_PLAYBACK.store(false, Ordering::SeqCst);
 
-    for (_index, event) in events.iter().enumerate() {
+    let mut last_event_time = events[0].time;
+
+    for event in events.iter() {
         
         if STOP_PLAYBACK.load(Ordering::SeqCst) { is_stop = true; break; }
 
+        // 計算與上一個事件之間的時間差並等待
+        let delay = event.time.duration_since(last_event_time).unwrap_or_default();
+        sleep(delay);
+
+        // 根據事件類型直接模擬，不再傳入延遲時間
         match event.event_type {
-            KeyPress(key) => { _play_key_press(key, 1); }
-            KeyRelease(key) => { _play_key_release(key, 1); }
-            MouseMove { x, y } => { _play_mouse_move(x, y, 1); }
+            KeyPress(key) => { _play_key_press(key); }
+            KeyRelease(key) => {  _play_key_release(key); }
+            MouseMove { x, y } => { _play_mouse_move(x, y); }
             _ => {}
         }
+
+        last_event_time = event.time;
     }
 
     is_stop
