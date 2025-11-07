@@ -107,7 +107,7 @@ async function handleCommandPlayRecord() {
       <button class="round-button" :class="{ 'is-recording': isRecording }" @click="toggleRecording">
         {{ isRecording ? "Stop" : "Start" }}
       </button>
-      <button class="round-button" @click="playRecord" :disabled="isRecording || isCountingDown" :class="{ 'is-countdown': isCountingDown }">
+      <button class="round-button" @click="playRecord(5)" :disabled="isRecording || isCountingDown" :class="{ 'is-countdown': isCountingDown }">
         {{ isCountingDown ? countdown : "Play" }}
       </button>
     </div>
