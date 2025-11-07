@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::result::Result;
 use std::thread::{spawn, sleep, JoinHandle};
+use tauri::{AppHandle, Emitter};
 use lazy_static::lazy_static;
 use rdev::{listen, simulate, Event, EventType, Key, ListenError};
 use rdev::EventType::{KeyPress, KeyRelease, MouseMove};
@@ -95,7 +96,7 @@ fn callback(event: Event) {
 /// # 返回值
 /// - JoinHandle<Result<(), ListenError>> - 執行緒的 handle，可用於檢查執行狀態
 fn listen_keyboard() -> JoinHandle<Result<(), ListenError>> {
-
+    
     spawn(move || {
         listen_keyboard_action().map_err(|error| { 
             println!("[Error] 鍵盤監聽執行緒發生錯誤: {:?}", error);
@@ -132,7 +133,7 @@ fn record_event(event: &Event, _key: Key) {
 /// 註冊全局熱鍵行為 (新執行緒)
 /// # 返回值
 /// - JoinHandle<()> - 執行緒的 handle，可用於檢查執行狀態
-fn register_hotkey_action() -> JoinHandle<()> {
+fn register_hotkey_action(app_handle: AppHandle) -> JoinHandle<()> {
 
     spawn(move || {
         
@@ -164,9 +165,9 @@ fn register_hotkey_action() -> JoinHandle<()> {
 /// 初始化設置
 /// # 返回值
 /// - Result<(JoinHandle<Result<(), ListenError>>, JoinHandle<()>), String>
-fn init_setting() -> Result<(JoinHandle<Result<(), ListenError>>, JoinHandle<()>), String> {
-    let keyboard_handle = listen_keyboard();
-    let hotkey_handle = register_hotkey_action();
+fn init_setting(app_handle: AppHandle) -> Result<(JoinHandle<Result<(), ListenError>>, JoinHandle<()>), String> {
+    let keyboard_handle = ();
+    let hotkey_handle = register_hotkey_action(app_handle);
     Ok((keyboard_handle, hotkey_handle))
 }
 
@@ -251,10 +252,13 @@ fn keyboard_status() -> bool { check_keyboard_status() }
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 
-    let handles = init_setting().expect("Failed to initialize settings");
-    *THREAD_HANDLES.lock().unwrap() = Some(handles);
-
     tauri::Builder::default()
+        .setup(|_app: &mut tauri::App| {
+            let app_handle = _app.handle().clone();
+            let handles = init_setting(app_handle).expect("Failed to initialize settings");
+            *THREAD_HANDLES.lock().unwrap() = Some(handles);
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             start_record,
             stop_record,
