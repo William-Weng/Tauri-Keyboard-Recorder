@@ -166,7 +166,7 @@ fn register_hotkey_action(app_handle: AppHandle) -> JoinHandle<()> {
 /// # 返回值
 /// - Result<(JoinHandle<Result<(), ListenError>>, JoinHandle<()>), String>
 fn init_setting(app_handle: AppHandle) -> Result<(JoinHandle<Result<(), ListenError>>, JoinHandle<()>), String> {
-    let keyboard_handle = ();
+    let keyboard_handle = listen_keyboard();
     let hotkey_handle = register_hotkey_action(app_handle);
     Ok((keyboard_handle, hotkey_handle))
 }
