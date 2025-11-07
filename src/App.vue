@@ -1,21 +1,39 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { ref, onMounted } from "vue";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
+
+enum KeyboardEvent {
+  StartRecord = "StartRecord",
+  StopRecord = "StopRecord",
+  PlayRecord = "PlayRecord"
+}
 
 const isRecording = ref(false);
 const isCountingDown = ref(false);
 const countdown = ref(5);
+const unlistenFunctions = ref<UnlistenFn[]>([]);
+
 let countdownInterval: number | undefined = undefined;
 
 onMounted(async () => {
   isRecording.value = await invoke("keyboard_status");
+  await registerListener();
 });
 
-function playRecord() {
+onUnmounted(() => {
+  unregisterListener();
+});
+
+/**
+ * 播放錄製內容，包含倒數計時
+ */
+function playRecord(value: number = 5) {
+
   if (isRecording.value || isCountingDown.value) return;
 
   isCountingDown.value = true;
-  countdown.value = 5;
+  countdown.value = value;
 
   countdownInterval = setInterval(() => {
     countdown.value -= 1;
@@ -27,10 +45,60 @@ function playRecord() {
   }, 1000);
 }
 
+/**
+ * 切換錄製狀態
+ */
 async function toggleRecording() {
   if (isRecording.value) { isRecording.value = await invoke("stop_record"); return; }
   isRecording.value = await invoke("start_record");
 }
+
+/**
+ * 註冊指令相關事件監聽 (用變數記錄下來)
+ */
+async function registerListener() {
+  unlistenFunctions.value.push(await handleCommandStartRecord());
+  unlistenFunctions.value.push(await handleCommandStopRecord());
+  unlistenFunctions.value.push(await handleCommandPlayRecord());
+}
+
+/**
+ * 解除指令相關事件監聽 (執行記錄的unlisten())
+ */
+function unregisterListener() {
+  unlistenFunctions.value.forEach((handle: () => void) => { handle(); });
+}
+
+/**
+ * 處理tauri傳來的StartRecord訊息 (emit)
+ */
+async function handleCommandStartRecord() {
+
+  return await listen<string>(KeyboardEvent.StartRecord, (_: any) => {
+    toggleRecording();
+  });
+}
+
+/**
+ * 處理tauri傳來的StopRecord訊息 (emit)
+ */
+async function handleCommandStopRecord() {
+
+  return await listen<string>(KeyboardEvent.StopRecord, (_: any) => {
+    toggleRecording();
+  });
+}
+
+/**
+ * 處理tauri傳來的PlayRecord訊息 (emit)
+ */
+async function handleCommandPlayRecord() {
+
+  return await listen<string>(KeyboardEvent.PlayRecord, (_: any) => {
+    playRecord(0);
+  });
+}
+
 </script>
 
 <template>

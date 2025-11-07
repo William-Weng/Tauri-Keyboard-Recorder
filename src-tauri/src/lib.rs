@@ -130,7 +130,7 @@ fn record_event(event: &Event, _key: Key) {
     recorder.events.push(event.clone());
 }
 
-/// 註冊全局熱鍵行為 (新執行緒)
+/// 註冊全局快速鍵行為 (新執行緒)
 /// # 返回值
 /// - JoinHandle<()> - 執行緒的 handle，可用於檢查執行狀態
 fn register_hotkey_action(app_handle: AppHandle) -> JoinHandle<()> {
@@ -138,21 +138,18 @@ fn register_hotkey_action(app_handle: AppHandle) -> JoinHandle<()> {
     spawn(move || {
         
         let hotkey_manager = GlobalHotKeyManager::new().expect("Failed to create GlobalHotKey manager");
-        let record_hotkey = HotKey::new(Some(Modifiers::META | Modifiers::SHIFT), Code::KeyG);  // Command + Shift + G => 開始錄製
-        let stop_hotkey = HotKey::new(Some(Modifiers::META | Modifiers::CONTROL), Code::KeyG);  // Command + Control + G => 停止操作
-        let playback_hotkey = HotKey::new(Some(Modifiers::META | Modifiers::ALT), Code::KeyG);  // Command + Option + G => 執行回放
+        let record_hotkey = HotKey::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyS);
+        let playback_hotkey = HotKey::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyP);
         
         hotkey_manager.register(record_hotkey.clone()).expect("Failed to register Command+Shift+G hotkey");
-        hotkey_manager.register(stop_hotkey.clone()).expect("Failed to register Command+Control+G hotkey");
         hotkey_manager.register(playback_hotkey.clone()).expect("Failed to register Command+Option+G hotkey");
 
         loop {
             if let Ok(event) = GlobalHotKeyEvent::receiver().recv() {
 
                 if event.state == HotKeyState::Pressed {
-                    if event.id() == record_hotkey.id() { start_listen(); } 
-                    else if event.id() == stop_hotkey.id() { stop_listen(); } 
-                    else if event.id() == playback_hotkey.id() { playback(); }
+                    if event.id() == record_hotkey.id() { let _ = app_handle.emit("StartRecord", 0); }
+                    else if event.id() == playback_hotkey.id() { let _ = app_handle.emit("PlayRecord", 0); }
                 }
             } else {
                 break;
