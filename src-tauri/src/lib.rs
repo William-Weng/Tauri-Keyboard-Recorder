@@ -169,6 +169,8 @@ fn init_setting(app_handle: AppHandle) -> Result<(JoinHandle<Result<(), ListenEr
 }
 
 /// 開始監聽錄製鍵盤事件
+/// # 返回值
+/// - bool - 返回當前是否在監聽狀態
 fn start_listen() -> bool {
     STOP_PLAYBACK.store(false, Ordering::SeqCst);
     IS_LISTENING.store(true, Ordering::SeqCst);
@@ -178,9 +180,22 @@ fn start_listen() -> bool {
 }
 
 /// 停止監聽錄製鍵盤事件
-fn stop_listen() -> bool {
+/// # 參數
+/// - `is_hotkey` - bool 是否通過熱鍵停止錄製
+/// # 返回值
+/// - bool - 返回當前是否仍在監聽狀態
+fn stop_listen(is_hotkey: bool) -> bool {
     STOP_PLAYBACK.store(true, Ordering::SeqCst);
     IS_LISTENING.store(false, Ordering::SeqCst);
+
+    if is_hotkey {
+        let mut recorder = RECORDER.lock().unwrap();
+        // Pop last 3 events if possible
+        for _ in 0..3 {
+            if recorder.events.is_empty() { break; }
+            recorder.events.pop();
+        }
+    }
 
     IS_LISTENING.load(Ordering::SeqCst)
 }
@@ -237,7 +252,7 @@ fn playback() -> bool {
 fn start_record() -> bool { start_listen() }
 
 #[tauri::command]
-fn stop_record() -> bool { stop_listen() }
+fn stop_record(is_hotkey: bool) -> bool { stop_listen(is_hotkey) }
 
 #[tauri::command]
 fn play_record() -> bool { playback() }

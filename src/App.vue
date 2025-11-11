@@ -48,8 +48,11 @@ function playRecord(value: number = 5) {
 /**
  * 切換錄製狀態
  */
-async function toggleRecording() {
-  if (isRecording.value) { isRecording.value = await invoke("stop_record"); return; }
+async function toggleRecording(isHotkey: boolean = false) {
+  if (isRecording.value) {
+    isRecording.value = await invoke("stop_record", { isHotkey });
+    return;
+  }
   isRecording.value = await invoke("start_record");
 }
 
@@ -75,7 +78,7 @@ function unregisterListener() {
 async function handleCommandStartRecord() {
 
   return await listen<string>(KeyboardEvent.StartRecord, (_: any) => {
-    toggleRecording();
+    toggleRecording(true);
   });
 }
 
@@ -104,7 +107,7 @@ async function handleCommandPlayRecord() {
 <template>
   <main class="container">
     <div class="row">
-      <button class="round-button" :class="{ 'is-recording': isRecording }" @click="toggleRecording">
+      <button class="round-button" :class="{ 'is-recording': isRecording }" @click="toggleRecording()">
         {{ isRecording ? "Stop" : "Start" }}
       </button>
       <button class="round-button" @click="playRecord(5)" :disabled="isRecording || isCountingDown" :class="{ 'is-countdown': isCountingDown }">

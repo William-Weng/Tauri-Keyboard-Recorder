@@ -1,6 +1,6 @@
 [package]
 name = "tauri-keyboard-recorder"
-version = "0.1.1"
+version = "0.1.4"
 description = "A keyboard recorder"
 authors = ["william.weng"]
 edition = "2021"

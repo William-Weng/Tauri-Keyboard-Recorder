@@ -3877,7 +3877,7 @@ dependencies = [
 
 [[package]]
 name = "tauri-keyboard-recorder"
-version = "0.1.1"
+version = "0.1.4"
 dependencies = [
  "global-hotkey",
  "lazy_static",

@@ -10,8 +10,6 @@ npm run tauri build
 
 ## 要加入隱私權設定
 
-![](input.png)
-
 ![](accessibility.png)
 
 ## 快速鍵
