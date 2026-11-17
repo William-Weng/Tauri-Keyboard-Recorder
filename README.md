@@ -1,3 +1,5 @@
+# ⚠️ Tauri-Keyboard-Recorder 已停止維護
+
 ## [簡易鍵盤錄製器](https://v2.tauri.app/plugin/file-system/)
 
 ## [安裝執行](https://william-weng.github.io/tags/rust/)
